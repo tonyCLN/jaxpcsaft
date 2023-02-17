@@ -54,7 +54,7 @@ from jax import numpy as np
 from jax import jacfwd
 from jax import lax
 
-class PC_SAFT_EOS():
+class PC_SAFT_jax():
     def __init__(self, m, sigma, epsilon_k, M=None, kbi=None, kAB_k=None, eAB_k=None, S=None,kbiasc=None):
         self.ncomp = len(m)
         self.M = M
