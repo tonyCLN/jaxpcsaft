@@ -1,1 +1,1 @@
-from . import PC_SAFT_jax
+from . import PC_SAFT
