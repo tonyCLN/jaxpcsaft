@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tony_saft_jax",
-    version="0.0.1",
+    version="0.0.2",
     author="Antonio Cavalcante", #<<<
     author_email="tcavalcanteneto@gmail.com", #<<<
     description="A small pc-saft package jited to be faster", #<<<

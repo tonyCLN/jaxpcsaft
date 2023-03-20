@@ -54,7 +54,7 @@ from jax import numpy as np
 from jax import jacfwd
 from jax import lax
 
-class PC_SAFT_jax():
+class  PC_SAFT_jax():
     def __init__(self, m, sigma, epsilon_k, M=None, kbi=None, kAB_k=None, eAB_k=None, S=None,kbiasc=None):
         self.ncomp = len(m)
         self.M = M
@@ -109,12 +109,12 @@ class PC_SAFT_jax():
 
 
     # EQ -- ok!
-    def PC_SAFT_dens(self, T, P, x, phase=None, opt=False, method=None,real=False):
+    def  dens(self, T, P, x, phase=None, opt=False, method=None,real=False):
         T = nnp.asarray(T)
         P = nnp.asarray(P)
         x = nnp.asarray(x)
         m = nnp.asarray(self.m)
-        d_T =  nnp.asarray(  PC_SAFT_d_T(T, self.ncomp, self.sigma, self.epsilon_k))
+        d_T =  nnp.asarray(   d_T(T, self.ncomp, self.sigma, self.epsilon_k))
         soma = 0
         # for liquid
         etaguessL = 0.5
@@ -128,18 +128,18 @@ class PC_SAFT_jax():
 
         def residuo(dens):
             densi, = dens
-            # res0 = 1 - (self.PC_SAFT_Pressure(densi, T, x))/P
-            res0 = (((self.PC_SAFT_Pressure(densi, T, x))/P) -1)
+            # res0 = 1 - (self. Pressure(densi, T, x))/P
+            res0 = (((self. Pressure(densi, T, x))/P) -1)
             f = nnp.asarray([res0])
             return f
         # aqui otimiza
         if opt is True:
             def fobjL(dens):
-                f = ((P - self.PC_SAFT_Pressure(dens, T, x)))**2 - min(0,1/(6/pi*(pi/(3/np.sqrt(2)))/soma*1e30/Navo)- dens)
+                f = ((P - self. Pressure(dens, T, x)))**2 - min(0,1/(6/pi*(pi/(3/np.sqrt(2)))/soma*1e30/Navo)- dens)
                 return f
 
             def fobjV(dens):
-                f = ((P - self.PC_SAFT_Pressure(dens, T, x)))**2
+                f = ((P - self. Pressure(dens, T, x)))**2
                 return f
             
             
@@ -160,7 +160,7 @@ class PC_SAFT_jax():
             def residuo_log(dens_ad):  # escalar
 
                 densi = dens_ad[0]
-                pcalc = self.PC_SAFT_Pressure(densi, T, x)
+                pcalc = self. Pressure(densi, T, x)
                 res0 = np.log(pcalc / P)
                 f = [res0]
 
@@ -196,19 +196,19 @@ class PC_SAFT_jax():
 
 
 
-    def PC_SAFT_Psat(self, T, guessP):
+    def  Psat(self, T, guessP):
         x = np.array([1])
-        dens_L0, dens_V0 = self.PC_SAFT_dens(T, guessP, x)
+        dens_L0, dens_V0 = self. dens(T, guessP, x)
 
         def residuo(var):
             Psat = var[0]
             dens_L = var[1]
             dens_V = var[2]
 
-            Pl = self.PC_SAFT_Pressure(dens_L, T, x)
-            Pv = self.PC_SAFT_Pressure(dens_V, T, x)
-            phiL = self.PC_SAFT_phi(dens_L, T, x)
-            phiV = self.PC_SAFT_phi(dens_V, T, x)
+            Pl = self. Pressure(dens_L, T, x)
+            Pv = self. Pressure(dens_V, T, x)
+            phiL = self. phi(dens_L, T, x)
+            phiV = self. phi(dens_V, T, x)
 
             res1 = (1-phiL/phiV)**2
             res2 = ((Pl-Psat)/Pl)**2
@@ -225,7 +225,7 @@ class PC_SAFT_jax():
 
         return Psat, dens_L, dens_V
 
-    def PC_SAFT_Psat2(self, T, iguess_P):  # ,index):
+    def  Psat2(self, T, iguess_P):  # ,index):
         RES = 1
         TOL = 1e-7
         MAX = 100
@@ -233,29 +233,29 @@ class PC_SAFT_jax():
         i = 0
         while(RES > TOL and i < MAX):
             x = np.array([1.])
-            dens_L, dens_V = self.PC_SAFT_dens(T, P, x)
+            dens_L, dens_V = self. dens(T, P, x)
             if np.abs(dens_L-dens_V) < 1e-9:
                 print('solução trivial')
                 return np.nan, -1
-            phiL = self.PC_SAFT_phi(dens_L, T, x)
-            phiV = self.PC_SAFT_phi(dens_V, T, x)
+            phiL = self. phi(dens_L, T, x)
+            phiV = self. phi(dens_V, T, x)
             P = P*(phiL/phiV)
             RES = np.abs(phiL/phiV-1.)
             i = i+10
         return P[0]
 
     # kg/m³
-    def PC_SAFT_massdens(self, T, P, x, phase=None, method=None, opt=False):
+    def  massdens(self, T, P, x, phase=None, method=None, opt=False):
 
         M = self.M
         if phase is None:
-            densl, densv = self.PC_SAFT_dens(T, P, x, method=method, opt=opt)
+            densl, densv = self. dens(T, P, x, method=method, opt=opt)
             massdens = np.zeros(2)
             for i in range(self.ncomp):
                 massdens[0] += x[i]*M[i]*densl/1e+3
                 massdens[1] += x[i]*M[i]*densv/1e+3
         else:
-            dens = self.PC_SAFT_dens(
+            dens = self. dens(
                 T, P, x, phase=phase, method=method, opt=opt)
             massdens = 0
             for i in range(self.ncomp):
@@ -263,9 +263,9 @@ class PC_SAFT_jax():
 
         return massdens
 
-    def PC_SAFT_dens1phase(self,T,P,x):
+    def  dens1phase(self,T,P,x):
         m = self.m
-        d_T =   PC_SAFT_d_T(T, self.ncomp, self.sigma, self.epsilon_k)
+        d_T =    d_T(T, self.ncomp, self.sigma, self.epsilon_k)
         soma = 0
         etaguessL = 0.5
         for i in range(self.ncomp):
@@ -277,7 +277,7 @@ class PC_SAFT_jax():
             dens0 =1
             nl=1
             
-            Al = self.PC_SAFT_a_res(dens,T,x)*T*kb*Navo
+            Al = self. a_res(dens,T,x)*T*kb*Navo
             somx = 0
             for i in range(self.ncomp):
                 somx += x[i]*np.log(x[i])
@@ -303,30 +303,30 @@ class PC_SAFT_jax():
         densL_1 = ans["x"][0]
         return densL_1
     
-    def PC_SAFT_XA(self,dens,T,x):
-        XA= PC_SAFT_X_tan(dens, T, x, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+    def  XA(self,dens,T,x):
+        XA=  X_tan(dens, T, x, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return XA
     
-    def PC_SAFT_a_res(self,dens,T,x):
-        ares = PC_SAFT_a_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+    def  a_res(self,dens,T,x):
+        ares =  a_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return ares
     
-    def PC_SAFT_mu_res_kT_autoeZ_res(self,dens,T,x):
-        mu,Z_res = PC_SAFT_mu_res_kT_autoeZ_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+    def  mu_res_kT_autoeZ_res(self,dens,T,x):
+        mu,Z_res =  mu_res_kT_autoeZ_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return mu,Z_res
     
-    def PC_SAFT_phi_auto(self,dens,T,x):
-        phi = PC_SAFT_phi(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+    def  phi_auto(self,dens,T,x):
+        phi =  phi(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return phi
     
-    def PC_SAFT_Pressure(self,dens,T,x):
-        P = PC_SAFT_Pressure(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+    def  Pressure(self,dens,T,x):
+        P =  Pressure(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return P
     
 # EQ A.9 ok!
 @partial(njit, static_argnames=['ncomp'] ) #https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html
                                            #https://jax.readthedocs.io/en/latest/_autosummary/jax.jit.html
-def PC_SAFT_d_T( T, ncomp, sigma, epsilon_k):
+def  d_T( T, ncomp, sigma, epsilon_k):
     
     d_T = sigma*(1.0-0.12*np.exp(-3.*epsilon_k/(T)))
 
@@ -334,10 +334,10 @@ def PC_SAFT_d_T( T, ncomp, sigma, epsilon_k):
     
 # EQ A.8 ok!
 @partial(njit, static_argnames=['ncomp'] )
-def PC_SAFT_csi(dens, T, x,ncomp,sigma,epsilon_k,m):
+def  csi(dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    d_T = PC_SAFT_d_T(T, ncomp, sigma, epsilon_k)
-    rho = PC_SAFT_rho(dens)
+    d_T =  d_T(T, ncomp, sigma, epsilon_k)
+    rho =  rho(dens)
 
     powd = np.stack([d_T**0,d_T,d_T**2,d_T**3],axis=1)
     csi = (x*m)@powd*pi*rho/6
@@ -346,15 +346,15 @@ def PC_SAFT_csi(dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.21 ok!
 @partial(njit)
-def PC_SAFT_rho(dens):
+def  rho(dens):
     
     rho = dens*Navo/1.0e30
     
     return rho
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_dij(T, ncomp, sigma, epsilon_k):
-    d_T =  PC_SAFT_d_T(T, ncomp, sigma, epsilon_k)
+def  dij(T, ncomp, sigma, epsilon_k):
+    d_T =   d_T(T, ncomp, sigma, epsilon_k)
     
     dij = d_T.reshape((ncomp,1))*d_T /(d_T.reshape((ncomp,1))+d_T)
     
@@ -362,10 +362,10 @@ def PC_SAFT_dij(T, ncomp, sigma, epsilon_k):
     
 # EQ A.7 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_ghs( dens, T, x, ncomp, sigma, epsilon_k,m):
+def  ghs( dens, T, x, ncomp, sigma, epsilon_k,m):
     
-    csi =   PC_SAFT_csi(dens, T, x, ncomp, sigma, epsilon_k,m)
-    dij =     PC_SAFT_dij(T,ncomp, sigma, epsilon_k)
+    csi =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)
+    dij =      dij(T,ncomp, sigma, epsilon_k)
     
     ghs = 1/(1-csi[3]) + dij*3*csi[2]/( 1-csi[3])**2 + ((dij)**2)*2*csi[2]**2/(1-csi[3])**3
 
@@ -373,9 +373,9 @@ def PC_SAFT_ghs( dens, T, x, ncomp, sigma, epsilon_k,m):
 
 # EQ A.26 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_Zhs(dens, T, x, ncomp, sigma, epsilon_k,m):
+def  Zhs(dens, T, x, ncomp, sigma, epsilon_k,m):
     
-    csi =   PC_SAFT_csi(dens, T, x, ncomp, sigma, epsilon_k,m)
+    csi =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     P1 = csi[3]/(1-csi[3])
     P2 = 3*csi[1]*csi[2]/(csi[0]*(1-csi[3])**2)
@@ -386,7 +386,7 @@ def PC_SAFT_Zhs(dens, T, x, ncomp, sigma, epsilon_k,m):
 
 # EQ A.5 ok!
 @partial(njit)
-def PC_SAFT_mmed(x,m):
+def  mmed(x,m):
 
     mmed = sum(x*m)
 
@@ -394,9 +394,9 @@ def PC_SAFT_mmed(x,m):
 
 # EQ A.6 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_a_hs( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  a_hs( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    csi =   PC_SAFT_csi(dens, T, x, ncomp, sigma, epsilon_k,m)
+    csi =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     a_hs = (3*csi[1]*csi[2]/(1-csi[3]) + csi[2]**3/(csi[3]*(1-csi[3])
             ** 2) + (csi[2]**3/csi[3]**2 - csi[0])*np.log(1-csi[3]))/csi[0]
@@ -405,11 +405,11 @@ def PC_SAFT_a_hs( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.4 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_a_hc( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  a_hc( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    mmed = PC_SAFT_mmed(x,m)
-    ghs =  PC_SAFT_ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
-    a_hs =  PC_SAFT_a_hs(dens, T, x, ncomp, sigma, epsilon_k,m)
+    mmed =  mmed(x,m)
+    ghs =   ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
+    a_hs =   a_hs(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     soma = sum(-x*(m-1)*np.log(ghs.diagonal()))
     a_hc = mmed*a_hs + soma
@@ -418,9 +418,9 @@ def PC_SAFT_a_hc( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.18 AND A.19  ok!
 @partial(njit)
-def PC_SAFT_a_e_b(x,ap,bp,m):
+def  a_e_b(x,ap,bp,m):
 
-    mmed = PC_SAFT_mmed(x,m)
+    mmed =  mmed(x,m)
 
     a = ap[:, 0] + (mmed-1)*ap[:, 1]/mmed + \
         (1-1/mmed)*(1-2/mmed)*ap[:, 2]
@@ -431,10 +431,10 @@ def PC_SAFT_a_e_b(x,ap,bp,m):
 
 # A.16 and A.17 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_I1_e_I2( dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m):
+def  I1_e_I2( dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m):
     
-    a, b =  PC_SAFT_a_e_b(x,ap,bp,m)
-    eta =   PC_SAFT_csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
+    a, b =   a_e_b(x,ap,bp,m)
+    eta =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
     i = nnp.arange(7)
 
     I1 = sum(a*eta**i)
@@ -444,10 +444,10 @@ def PC_SAFT_I1_e_I2( dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m):
 
 # EQ A.11 ok! -> its not inverted in the paper
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_C1( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  C1( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    mmed = PC_SAFT_mmed(x,m)
-    eta =   PC_SAFT_csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
+    mmed =  mmed(x,m)
+    eta =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
 
     C1 = (1 + mmed*(8*eta-2*eta**2)/(1-eta)**4 + (1-mmed)*(20*eta -
           27*eta**2 + 12*eta**3 - 2*eta**4)/((1-eta)*(2-eta))**2)**-1
@@ -456,11 +456,11 @@ def PC_SAFT_C1( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.31 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_C2( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  C2( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    C1 =  PC_SAFT_C1(dens, T, x, ncomp, sigma, epsilon_k,m)
-    mmed = PC_SAFT_mmed(x,m)
-    eta =   PC_SAFT_csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
+    C1 =   C1(dens, T, x, ncomp, sigma, epsilon_k,m)
+    mmed =  mmed(x,m)
+    eta =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
 
     C2 = -C1**2*(mmed*(-4*eta**2 + 20*eta + 8)/(1-eta)**5 + (1-mmed)
                  * (2*eta**3+12*eta**2-48*eta+40)/((1-eta)*(2-eta))**3)
@@ -469,7 +469,7 @@ def PC_SAFT_C2( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.14 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_MAT_sigma(x,ncomp,sigma):
+def  MAT_sigma(x,ncomp,sigma):
 
     MAT_sigma = (sigma.reshape((ncomp,1))+sigma)/2
 
@@ -477,7 +477,7 @@ def PC_SAFT_MAT_sigma(x,ncomp,sigma):
 
 # EQ A.15 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_MAT_epsilon_k(x,ncomp,epsilon_k,kbi):
+def  MAT_epsilon_k(x,ncomp,epsilon_k,kbi):
 
     MAT_epsilon_k = (epsilon_k.reshape((ncomp,1))*epsilon_k)**(1/2)*(1-kbi)
 
@@ -485,10 +485,10 @@ def PC_SAFT_MAT_epsilon_k(x,ncomp,epsilon_k,kbi):
 
 # EQ A.12 and A.13 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_m_2esig_3_e_m_2e_2sig_3(T, x,ncomp,sigma,epsilon_k,kbi,m):
+def  m_2esig_3_e_m_2e_2sig_3(T, x,ncomp,sigma,epsilon_k,kbi,m):
 
-    MAT_epsilon_k =  PC_SAFT_MAT_epsilon_k( x, ncomp, epsilon_k,kbi)
-    MAT_sigma =  PC_SAFT_MAT_sigma( x, ncomp, sigma)
+    MAT_epsilon_k =   MAT_epsilon_k( x, ncomp, epsilon_k,kbi)
+    MAT_sigma =   MAT_sigma( x, ncomp, sigma)
     
     m_2esig_3 = np.einsum('i,j,i,j,ij,ij-> ', x,x,m,m,(MAT_epsilon_k/T),MAT_sigma**3)
     m_2e_2sig_3 = np.einsum('i,j,i,j,ij,ij-> ', x,x,m,m,(MAT_epsilon_k/T)**2,MAT_sigma**3)
@@ -497,29 +497,29 @@ def PC_SAFT_m_2esig_3_e_m_2e_2sig_3(T, x,ncomp,sigma,epsilon_k,kbi,m):
 
 # EQ A.10 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_a_disp(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m ,kbi):
+def  a_disp(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m ,kbi):
     
-    I1, I2 =  PC_SAFT_I1_e_I2(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m)
-    m_2esig_3, m_2e_2sig_3 =  PC_SAFT_m_2esig_3_e_m_2e_2sig_3(T, x, ncomp, sigma, epsilon_k, kbi,m)
-    rho =   PC_SAFT_rho(dens)
-    mmed = PC_SAFT_mmed(x,m)
-    C1 =  PC_SAFT_C1(dens, T, x, ncomp, sigma, epsilon_k,m)
+    I1, I2 =   I1_e_I2(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m)
+    m_2esig_3, m_2e_2sig_3 =   m_2esig_3_e_m_2e_2sig_3(T, x, ncomp, sigma, epsilon_k, kbi,m)
+    rho =    rho(dens)
+    mmed =  mmed(x,m)
+    C1 =   C1(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     a_disp = -2*pi*rho*I1*m_2esig_3 - pi*rho*mmed*C1*I2*m_2e_2sig_3
     
     return a_disp
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_eAiBj_k(ncomp,eAB_k):
+def  eAiBj_k(ncomp,eAB_k):
 
     eAiBj_k = (eAB_k.reshape((ncomp,1))+eAB_k)/2
 
     return eAiBj_k
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc):
+def  kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc):
     
-    MAT_sigma =  PC_SAFT_MAT_sigma( x, ncomp, sigma)
+    MAT_sigma =   MAT_sigma( x, ncomp, sigma)
     
     kAB_kij = np.sqrt(kAB_k.reshape((ncomp,1))*kAB_k)
     MAT_sigmaii = (np.sqrt(MAT_sigma.diagonal().reshape((ncomp,1))*MAT_sigma.diagonal())/((MAT_sigma.T+MAT_sigma)/2))**3*(1-kbiasc)
@@ -528,12 +528,12 @@ def PC_SAFT_kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc):
     return kAiBj_k
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
+def  delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
     nsite = len(S)
-    MAT_sigma =  PC_SAFT_MAT_sigma( x, ncomp, sigma)
-    eAiBj_k =  PC_SAFT_eAiBj_k( ncomp, eAB_k)
-    kAiBj_k =  PC_SAFT_kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc)
-    ghs =  PC_SAFT_ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
+    MAT_sigma =   MAT_sigma( x, ncomp, sigma)
+    eAiBj_k =   eAiBj_k( ncomp, eAB_k)
+    kAiBj_k =   kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc)
+    ghs =   ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
     invkro = nnp.ones((nsite, ncomp, nsite, ncomp))
     i = nnp.arange(nsite)
     invkro[i,:,i,:] = 0
@@ -545,10 +545,10 @@ def PC_SAFT_delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     return delt
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
-    delta = PC_SAFT_delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
+def  X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
+    delta =  delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     nsite = len(S)
-    rho =   PC_SAFT_rho(dens)
+    rho =    rho(dens)
     X_A = nnp.ones([nsite, ncomp])*0.5
     X_A_old = nnp.ones([nsite, ncomp])*(-1)
     it = 0
@@ -580,9 +580,9 @@ def PC_SAFT_X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc
     return X_A
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
+def  a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
 
-    X_A =  PC_SAFT_X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
+    X_A =   X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     
     s1 = sum((np.log(X_A) - X_A/2 ))
     a_ass = sum(x*(s1+ sum(S)*0.5))
@@ -591,16 +591,16 @@ def PC_SAFT_a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbias
 
 # EQ A.3 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
 
-    a_res =  PC_SAFT_a_hc(dens, T, x, ncomp, sigma, epsilon_k,m) +  PC_SAFT_a_disp(dens, T, x, ap,bp,ncomp,sigma,epsilon_k,m,kbi) +  PC_SAFT_a_asc(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
+    a_res =   a_hc(dens, T, x, ncomp, sigma, epsilon_k,m) +   a_disp(dens, T, x, ap,bp,ncomp,sigma,epsilon_k,m,kbi) +   a_asc(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     
     return a_res
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
-    ares = PC_SAFT_a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
-    jaca_res = jacfwd(PC_SAFT_a_res,argnums=(0,2))(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+def  mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+    ares =  a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+    jaca_res = jacfwd( a_res,argnums=(0,2))(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
     
     soma = np.einsum('j,j->', x,jaca_res[1])
     Z_res = dens*jaca_res[0]
@@ -610,8 +610,8 @@ def PC_SAFT_mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m,
 
 # EQ A.32 ok!
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
-    mu,Z_res = PC_SAFT_mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+def  phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+    mu,Z_res =  mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
 
     lnphi = mu - np.log(Z_res+1)
 
@@ -619,9 +619,9 @@ def PC_SAFT_phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_
     return phi
 
 @partial(njit, static_argnames=['ncomp'])
-def PC_SAFT_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
 
-    da_drho = jacfwd(PC_SAFT_a_res,argnums=0)(dens,T,x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+    da_drho = jacfwd( a_res,argnums=0)(dens,T,x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
 
     Z = 1+dens*da_drho
 
@@ -629,9 +629,9 @@ def PC_SAFT_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k,
 
 @partial(njit, static_argnames=['ncomp'])
 # EQ A.23 ok! -> there is no avogadro number in the paper, only volume convertion in intead
-def PC_SAFT_Pressure(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  Pressure(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
     
-    Z = PC_SAFT_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+    Z =  Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
     
     P = Z*kb*T*dens*Navo
     
