@@ -557,9 +557,7 @@ def  X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
         X_A = args[1]
         it=args[2]
         X_A_old = X_A*1
-        r1 = x*S*X_A_old*delta
-        r2 =r1.sum(axis=3)
-        sum1 = sum(r2).T
+        sum1 = np.einsum('k,lk,lk,lkji-> ji', x,S,X_A_old,delta)
         X_A = 1./(1. + rho*sum1)
         it = it+1
         return [X_A_old,X_A,it]
@@ -584,8 +582,8 @@ def  a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
 
     X_A =   X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     
-    s1 = sum((np.log(X_A) - X_A/2 ))
-    a_ass = sum(x*(s1+ sum(S)*0.5))
+    s1 = sum((np.log(X_A) - X_A/2 + 0.5 )*S)
+    a_ass = sum(x*(s1))
     
     return a_ass
 
