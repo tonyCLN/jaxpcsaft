@@ -114,7 +114,7 @@ class  PC_SAFT_jax():
         P = nnp.asarray(P)
         x = nnp.asarray(x)
         m = nnp.asarray(self.m)
-        d_T =  nnp.asarray(   d_T(T, self.ncomp, self.sigma, self.epsilon_k))
+        d_T =  nnp.asarray(   pc_d_T(T, self.ncomp, self.sigma, self.epsilon_k))
         soma = 0
         # for liquid
         etaguessL = 0.5
@@ -128,18 +128,18 @@ class  PC_SAFT_jax():
 
         def residuo(dens):
             densi, = dens
-            # res0 = 1 - (self. Pressure(densi, T, x))/P
-            res0 = (((self. Pressure(densi, T, x))/P) -1)
+            # res0 = 1 - (self. pc_Pressure(densi, T, x))/P
+            res0 = (((self. pc_Pressure(densi, T, x))/P) -1)
             f = nnp.asarray([res0])
             return f
         # aqui otimiza
         if opt is True:
             def fobjL(dens):
-                f = ((P - self. Pressure(dens, T, x)))**2 - min(0,1/(6/pi*(pi/(3/np.sqrt(2)))/soma*1e30/Navo)- dens)
+                f = ((P - self. pc_Pressure(dens, T, x)))**2 - min(0,1/(6/pi*(pi/(3/np.sqrt(2)))/soma*1e30/Navo)- dens)
                 return f
 
             def fobjV(dens):
-                f = ((P - self. Pressure(dens, T, x)))**2
+                f = ((P - self. pc_Pressure(dens, T, x)))**2
                 return f
             
             
@@ -160,7 +160,7 @@ class  PC_SAFT_jax():
             def residuo_log(dens_ad):  # escalar
 
                 densi = dens_ad[0]
-                pcalc = self. Pressure(densi, T, x)
+                pcalc = self. pc_Pressure(densi, T, x)
                 res0 = np.log(pcalc / P)
                 f = [res0]
 
@@ -205,10 +205,10 @@ class  PC_SAFT_jax():
             dens_L = var[1]
             dens_V = var[2]
 
-            Pl = self. Pressure(dens_L, T, x)
-            Pv = self. Pressure(dens_V, T, x)
-            phiL = self. phi(dens_L, T, x)
-            phiV = self. phi(dens_V, T, x)
+            Pl = self. pc_Pressure(dens_L, T, x)
+            Pv = self. pc_Pressure(dens_V, T, x)
+            phiL = self. pc_phi(dens_L, T, x)
+            phiV = self. pc_phi(dens_V, T, x)
 
             res1 = (1-phiL/phiV)**2
             res2 = ((Pl-Psat)/Pl)**2
@@ -237,8 +237,8 @@ class  PC_SAFT_jax():
             if np.abs(dens_L-dens_V) < 1e-9:
                 print('solução trivial')
                 return np.nan, -1
-            phiL = self. phi(dens_L, T, x)
-            phiV = self. phi(dens_V, T, x)
+            phiL = self. pc_phi(dens_L, T, x)
+            phiV = self. pc_phi(dens_V, T, x)
             P = P*(phiL/phiV)
             RES = np.abs(phiL/phiV-1.)
             i = i+10
@@ -265,7 +265,7 @@ class  PC_SAFT_jax():
 
     def  dens1phase(self,T,P,x):
         m = self.m
-        d_T =    d_T(T, self.ncomp, self.sigma, self.epsilon_k)
+        d_T =    pc_d_T(T, self.ncomp, self.sigma, self.epsilon_k)
         soma = 0
         etaguessL = 0.5
         for i in range(self.ncomp):
@@ -277,7 +277,7 @@ class  PC_SAFT_jax():
             dens0 =1
             nl=1
             
-            Al = self. a_res(dens,T,x)*T*kb*Navo
+            Al = self. pc_a_res(dens,T,x)*T*kb*Navo
             somx = 0
             for i in range(self.ncomp):
                 somx += x[i]*np.log(x[i])
@@ -304,29 +304,29 @@ class  PC_SAFT_jax():
         return densL_1
     
     def  XA(self,dens,T,x):
-        XA=  X_tan(dens, T, x, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+        XA=  pc_X_tan(dens, T, x, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return XA
     
     def  a_res(self,dens,T,x):
-        ares =  a_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+        ares =  pc_a_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return ares
     
     def  mu_res_kT_autoeZ_res(self,dens,T,x):
-        mu,Z_res =  mu_res_kT_autoeZ_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+        mu,Z_res =  pc_mu_res_kT_autoeZ_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return mu,Z_res
     
     def  phi_auto(self,dens,T,x):
-        phi =  phi(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+        phi =  pc_phi(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return phi
     
     def  Pressure(self,dens,T,x):
-        P =  Pressure(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+        P =  pc_Pressure(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return P
     
 # EQ A.9 ok!
 @partial(njit, static_argnames=['ncomp'] ) #https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html
                                            #https://jax.readthedocs.io/en/latest/_autosummary/jax.jit.html
-def  d_T( T, ncomp, sigma, epsilon_k):
+def  pc_d_T( T, ncomp, sigma, epsilon_k):
     
     d_T = sigma*(1.0-0.12*np.exp(-3.*epsilon_k/(T)))
 
@@ -334,10 +334,10 @@ def  d_T( T, ncomp, sigma, epsilon_k):
     
 # EQ A.8 ok!
 @partial(njit, static_argnames=['ncomp'] )
-def  csi(dens, T, x,ncomp,sigma,epsilon_k,m):
+def  pc_csi(dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    d_T =  d_T(T, ncomp, sigma, epsilon_k)
-    rho =  rho(dens)
+    d_T =  pc_d_T(T, ncomp, sigma, epsilon_k)
+    rho =  pc_rho(dens)
 
     powd = np.stack([d_T**0,d_T,d_T**2,d_T**3],axis=1)
     csi = (x*m)@powd*pi*rho/6
@@ -346,15 +346,15 @@ def  csi(dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.21 ok!
 @partial(njit)
-def  rho(dens):
+def  pc_rho(dens):
     
     rho = dens*Navo/1.0e30
     
     return rho
 
 @partial(njit, static_argnames=['ncomp'])
-def  dij(T, ncomp, sigma, epsilon_k):
-    d_T =   d_T(T, ncomp, sigma, epsilon_k)
+def  pc_dij(T, ncomp, sigma, epsilon_k):
+    d_T =   pc_d_T(T, ncomp, sigma, epsilon_k)
     
     dij = d_T.reshape((ncomp,1))*d_T /(d_T.reshape((ncomp,1))+d_T)
     
@@ -362,10 +362,10 @@ def  dij(T, ncomp, sigma, epsilon_k):
     
 # EQ A.7 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  ghs( dens, T, x, ncomp, sigma, epsilon_k,m):
+def  pc_ghs( dens, T, x, ncomp, sigma, epsilon_k,m):
     
-    csi =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)
-    dij =      dij(T,ncomp, sigma, epsilon_k)
+    csi =    pc_csi(dens, T, x, ncomp, sigma, epsilon_k,m)
+    dij =      pc_dij(T,ncomp, sigma, epsilon_k)
     
     ghs = 1/(1-csi[3]) + dij*3*csi[2]/( 1-csi[3])**2 + ((dij)**2)*2*csi[2]**2/(1-csi[3])**3
 
@@ -373,9 +373,9 @@ def  ghs( dens, T, x, ncomp, sigma, epsilon_k,m):
 
 # EQ A.26 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  Zhs(dens, T, x, ncomp, sigma, epsilon_k,m):
+def  pc_Zhs(dens, T, x, ncomp, sigma, epsilon_k,m):
     
-    csi =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)
+    csi =    pc_csi(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     P1 = csi[3]/(1-csi[3])
     P2 = 3*csi[1]*csi[2]/(csi[0]*(1-csi[3])**2)
@@ -386,7 +386,7 @@ def  Zhs(dens, T, x, ncomp, sigma, epsilon_k,m):
 
 # EQ A.5 ok!
 @partial(njit)
-def  mmed(x,m):
+def  pc_mmed(x,m):
 
     mmed = sum(x*m)
 
@@ -394,9 +394,9 @@ def  mmed(x,m):
 
 # EQ A.6 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  a_hs( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  pc_a_hs( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    csi =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)
+    csi =    pc_csi(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     a_hs = (3*csi[1]*csi[2]/(1-csi[3]) + csi[2]**3/(csi[3]*(1-csi[3])
             ** 2) + (csi[2]**3/csi[3]**2 - csi[0])*np.log(1-csi[3]))/csi[0]
@@ -405,11 +405,11 @@ def  a_hs( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.4 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  a_hc( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  pc_hc( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    mmed =  mmed(x,m)
-    ghs =   ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
-    a_hs =   a_hs(dens, T, x, ncomp, sigma, epsilon_k,m)
+    mmed =  pc_mmed(x,m)
+    ghs =   pc_ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
+    a_hs =   pc_a_hs(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     soma = sum(-x*(m-1)*np.log(ghs.diagonal()))
     a_hc = mmed*a_hs + soma
@@ -418,9 +418,9 @@ def  a_hc( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.18 AND A.19  ok!
 @partial(njit)
-def  a_e_b(x,ap,bp,m):
+def  pc_a_e_b(x,ap,bp,m):
 
-    mmed =  mmed(x,m)
+    mmed =  pc_mmed(x,m)
 
     a = ap[:, 0] + (mmed-1)*ap[:, 1]/mmed + \
         (1-1/mmed)*(1-2/mmed)*ap[:, 2]
@@ -431,10 +431,10 @@ def  a_e_b(x,ap,bp,m):
 
 # A.16 and A.17 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  I1_e_I2( dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m):
+def  pc_I1_e_I2( dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m):
     
-    a, b =   a_e_b(x,ap,bp,m)
-    eta =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
+    a, b =   pc_a_e_b(x,ap,bp,m)
+    eta =    pc_csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
     i = nnp.arange(7)
 
     I1 = sum(a*eta**i)
@@ -444,10 +444,10 @@ def  I1_e_I2( dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m):
 
 # EQ A.11 ok! -> its not inverted in the paper
 @partial(njit, static_argnames=['ncomp'])
-def  C1( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  pc_C1( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    mmed =  mmed(x,m)
-    eta =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
+    mmed =  pc_mmed(x,m)
+    eta =    pc_csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
 
     C1 = (1 + mmed*(8*eta-2*eta**2)/(1-eta)**4 + (1-mmed)*(20*eta -
           27*eta**2 + 12*eta**3 - 2*eta**4)/((1-eta)*(2-eta))**2)**-1
@@ -456,11 +456,11 @@ def  C1( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.31 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  C2( dens, T, x,ncomp,sigma,epsilon_k,m):
+def  pc_C2( dens, T, x,ncomp,sigma,epsilon_k,m):
     
-    C1 =   C1(dens, T, x, ncomp, sigma, epsilon_k,m)
-    mmed =  mmed(x,m)
-    eta =    csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
+    C1 =   pc_C1(dens, T, x, ncomp, sigma, epsilon_k,m)
+    mmed =  pc_mmed(x,m)
+    eta =    pc_csi(dens, T, x, ncomp, sigma, epsilon_k,m)[3]
 
     C2 = -C1**2*(mmed*(-4*eta**2 + 20*eta + 8)/(1-eta)**5 + (1-mmed)
                  * (2*eta**3+12*eta**2-48*eta+40)/((1-eta)*(2-eta))**3)
@@ -469,7 +469,7 @@ def  C2( dens, T, x,ncomp,sigma,epsilon_k,m):
 
 # EQ A.14 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  MAT_sigma(x,ncomp,sigma):
+def  pc_MAT_sigma(x,ncomp,sigma):
 
     MAT_sigma = (sigma.reshape((ncomp,1))+sigma)/2
 
@@ -477,7 +477,7 @@ def  MAT_sigma(x,ncomp,sigma):
 
 # EQ A.15 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  MAT_epsilon_k(x,ncomp,epsilon_k,kbi):
+def  pc_MAT_epsilon_k(x,ncomp,epsilon_k,kbi):
 
     MAT_epsilon_k = (epsilon_k.reshape((ncomp,1))*epsilon_k)**(1/2)*(1-kbi)
 
@@ -485,10 +485,10 @@ def  MAT_epsilon_k(x,ncomp,epsilon_k,kbi):
 
 # EQ A.12 and A.13 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  m_2esig_3_e_m_2e_2sig_3(T, x,ncomp,sigma,epsilon_k,kbi,m):
+def  pc_m_2esig_3_e_m_2e_2sig_3(T, x,ncomp,sigma,epsilon_k,kbi,m):
 
-    MAT_epsilon_k =   MAT_epsilon_k( x, ncomp, epsilon_k,kbi)
-    MAT_sigma =   MAT_sigma( x, ncomp, sigma)
+    MAT_epsilon_k =   pc_MAT_epsilon_k( x, ncomp, epsilon_k,kbi)
+    MAT_sigma =   pc_MAT_sigma( x, ncomp, sigma)
     
     m_2esig_3 = np.einsum('i,j,i,j,ij,ij-> ', x,x,m,m,(MAT_epsilon_k/T),MAT_sigma**3)
     m_2e_2sig_3 = np.einsum('i,j,i,j,ij,ij-> ', x,x,m,m,(MAT_epsilon_k/T)**2,MAT_sigma**3)
@@ -497,29 +497,29 @@ def  m_2esig_3_e_m_2e_2sig_3(T, x,ncomp,sigma,epsilon_k,kbi,m):
 
 # EQ A.10 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  a_disp(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m ,kbi):
+def  pc_a_disp(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m ,kbi):
     
-    I1, I2 =   I1_e_I2(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m)
-    m_2esig_3, m_2e_2sig_3 =   m_2esig_3_e_m_2e_2sig_3(T, x, ncomp, sigma, epsilon_k, kbi,m)
-    rho =    rho(dens)
-    mmed =  mmed(x,m)
-    C1 =   C1(dens, T, x, ncomp, sigma, epsilon_k,m)
+    I1, I2 =   pc_I1_e_I2(dens, T, x,ap,bp,ncomp,sigma,epsilon_k,m)
+    m_2esig_3, m_2e_2sig_3 =   pc_m_2esig_3_e_m_2e_2sig_3(T, x, ncomp, sigma, epsilon_k, kbi,m)
+    rho =    pc_rho(dens)
+    mmed =  pc_mmed(x,m)
+    C1 =   pc_C1(dens, T, x, ncomp, sigma, epsilon_k,m)
 
     a_disp = -2*pi*rho*I1*m_2esig_3 - pi*rho*mmed*C1*I2*m_2e_2sig_3
     
     return a_disp
 
 @partial(njit, static_argnames=['ncomp'])
-def  eAiBj_k(ncomp,eAB_k):
+def  pc_eAiBj_k(ncomp,eAB_k):
 
     eAiBj_k = (eAB_k.reshape((ncomp,1))+eAB_k)/2
 
     return eAiBj_k
 
 @partial(njit, static_argnames=['ncomp'])
-def  kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc):
+def  pc_kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc):
     
-    MAT_sigma =   MAT_sigma( x, ncomp, sigma)
+    MAT_sigma =   pc_MAT_sigma( x, ncomp, sigma)
     
     kAB_kij = np.sqrt(kAB_k.reshape((ncomp,1))*kAB_k)
     MAT_sigmaii = (np.sqrt(MAT_sigma.diagonal().reshape((ncomp,1))*MAT_sigma.diagonal())/((MAT_sigma.T+MAT_sigma)/2))**3*(1-kbiasc)
@@ -528,12 +528,12 @@ def  kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc):
     return kAiBj_k
 
 @partial(njit, static_argnames=['ncomp'])
-def  delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
+def  pc_delta(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
     nsite = len(S)
-    MAT_sigma =   MAT_sigma( x, ncomp, sigma)
-    eAiBj_k =   eAiBj_k( ncomp, eAB_k)
-    kAiBj_k =   kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc)
-    ghs =   ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
+    MAT_sigma =   pc_MAT_sigma( x, ncomp, sigma)
+    eAiBj_k =   pc_eAiBj_k( ncomp, eAB_k)
+    kAiBj_k =   pc_kAiBj_k(x, ncomp, sigma, kAB_k,kbiasc)
+    ghs =   pc_ghs(dens, T, x, ncomp, sigma, epsilon_k,m)
     invkro = nnp.ones((nsite, ncomp, nsite, ncomp))
     i = nnp.arange(nsite)
     invkro[i,:,i,:] = 0
@@ -545,10 +545,10 @@ def  delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
     return delt
 
 @partial(njit, static_argnames=['ncomp'])
-def  X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
-    delta =  delt(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
+def  pc_X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
+    delta =  pc_delta(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     nsite = len(S)
-    rho =    rho(dens)
+    rho =    pc_rho(dens)
     X_A = nnp.ones([nsite, ncomp])*0.5
     X_A_old = nnp.ones([nsite, ncomp])*(-1)
     it = 0
@@ -578,9 +578,9 @@ def  X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
     return X_A
 
 @partial(njit, static_argnames=['ncomp'])
-def  a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
+def  pc_a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
 
-    X_A =   X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
+    X_A =   pc_X_tan(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     
     s1 = sum((np.log(X_A) - X_A/2 + 0.5 )*S)
     a_ass = sum(x*(s1))
@@ -589,16 +589,16 @@ def  a_asc( dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc):
 
 # EQ A.3 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  pc_a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
 
-    a_res =   a_hc(dens, T, x, ncomp, sigma, epsilon_k,m) +   a_disp(dens, T, x, ap,bp,ncomp,sigma,epsilon_k,m,kbi) +   a_asc(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
+    a_res =   pc_hc(dens, T, x, ncomp, sigma, epsilon_k,m) +   pc_a_disp(dens, T, x, ap,bp,ncomp,sigma,epsilon_k,m,kbi) +   pc_a_asc(dens, T, x, ncomp, sigma, epsilon_k, m, kAB_k, eAB_k, S,kbiasc)
     
     return a_res
 
 @partial(njit, static_argnames=['ncomp'])
-def  mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
-    ares =  a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
-    jaca_res = jacfwd( a_res,argnums=(0,2))(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+def  pc_mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+    ares =  pc_a_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+    jaca_res = jacfwd( pc_a_res,argnums=(0,2))(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
     
     soma = np.einsum('j,j->', x,jaca_res[1])
     Z_res = dens*jaca_res[0]
@@ -608,8 +608,8 @@ def  mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, k
 
 # EQ A.32 ok!
 @partial(njit, static_argnames=['ncomp'])
-def  phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
-    mu,Z_res =  mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+def  pc_phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+    mu,Z_res =  pc_mu_res_kT_autoeZ_res(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
 
     lnphi = mu - np.log(Z_res+1)
 
@@ -617,9 +617,9 @@ def  phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kb
     return phi
 
 @partial(njit, static_argnames=['ncomp'])
-def  Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  pc_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
 
-    da_drho = jacfwd( a_res,argnums=0)(dens,T,x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+    da_drho = jacfwd( pc_a_res,argnums=0)(dens,T,x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
 
     Z = 1+dens*da_drho
 
@@ -627,9 +627,9 @@ def  Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbia
 
 @partial(njit, static_argnames=['ncomp'])
 # EQ A.23 ok! -> there is no avogadro number in the paper, only volume convertion in intead
-def  Pressure(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  pc_Pressure(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
     
-    Z =  Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+    Z =  pc_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
     
     P = Z*kb*T*dens*Navo
     
