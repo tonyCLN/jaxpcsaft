@@ -65,7 +65,7 @@ class  PC_SAFT_jax():
         if eAB_k is None:
             self.eAB_k = np.zeros([self.ncomp])
             self.kAB_k = np.zeros([self.ncomp])
-            self.S = np.zeros([self.ncomp])
+            self.S = np.zeros([self.ncomp,2])
         
         else:
             self.eAB_k = eAB_k
