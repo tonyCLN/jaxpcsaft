@@ -311,6 +311,10 @@ class  PC_SAFT_jax():
         ares =  pc_a_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return ares
     
+    def  da_drho(self,dens,T,x):
+        da_drho =  pc_da_drho(dens, T, x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
+        return da_drho
+    
     def  mu_res_kT_autoeZ_res(self,dens,T,x):
         mu,Z_res =  pc_mu_res_kT_autoeZ_res(dens,T,x, self.ap, self.bp, self.ncomp, self.sigma, self.epsilon_k, self.m, self.kbi, self.kAB_k, self.eAB_k, self.S,self.kbiasc)
         return mu,Z_res
@@ -617,9 +621,16 @@ def  pc_phi(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S
     return phi
 
 @partial(njit, static_argnames=['ncomp'])
-def  pc_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+def  pc_da_drho(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
 
     da_drho = jacfwd( pc_a_res,argnums=0)(dens,T,x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
+
+    return da_drho
+
+@partial(njit, static_argnames=['ncomp'])
+def  pc_Z(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc):
+
+    da_drho = pc_da_drho(dens, T, x, ap, bp, ncomp, sigma, epsilon_k, m, kbi, kAB_k, eAB_k, S,kbiasc)
 
     Z = 1+dens*da_drho
 
