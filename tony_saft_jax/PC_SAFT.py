@@ -128,18 +128,18 @@ class  PC_SAFT_jax():
 
         def residuo(dens):
             densi, = dens
-            # res0 = 1 - (self. pc_Pressure(densi, T, x))/P
-            res0 = (((self. pc_Pressure(densi, T, x))/P) -1)
+            # res0 = 1 - (self.Pressure(densi, T, x))/P
+            res0 = (((self.Pressure(densi, T, x))/P) -1)
             f = nnp.asarray([res0])
             return f
         # aqui otimiza
         if opt is True:
             def fobjL(dens):
-                f = ((P - self. pc_Pressure(dens, T, x)))**2 - min(0,1/(6/pi*(pi/(3/np.sqrt(2)))/soma*1e30/Navo)- dens)
+                f = ((P - self.Pressure(dens, T, x)))**2 - min(0,1/(6/pi*(pi/(3/np.sqrt(2)))/soma*1e30/Navo)- dens)
                 return f
 
             def fobjV(dens):
-                f = ((P - self. pc_Pressure(dens, T, x)))**2
+                f = ((P - self.Pressure(dens, T, x)))**2
                 return f
             
             
@@ -160,7 +160,7 @@ class  PC_SAFT_jax():
             def residuo_log(dens_ad):  # escalar
 
                 densi = dens_ad[0]
-                pcalc = self. pc_Pressure(densi, T, x)
+                pcalc = self.Pressure(densi, T, x)
                 res0 = np.log(pcalc / P)
                 f = [res0]
 
@@ -205,10 +205,10 @@ class  PC_SAFT_jax():
             dens_L = var[1]
             dens_V = var[2]
 
-            Pl = self. pc_Pressure(dens_L, T, x)
-            Pv = self. pc_Pressure(dens_V, T, x)
-            phiL = self. pc_phi(dens_L, T, x)
-            phiV = self. pc_phi(dens_V, T, x)
+            Pl = self.Pressure(dens_L, T, x)
+            Pv = self.Pressure(dens_V, T, x)
+            phiL = self.phi(dens_L, T, x)
+            phiV = self.phi(dens_V, T, x)
 
             res1 = (1-phiL/phiV)**2
             res2 = ((Pl-Psat)/Pl)**2
@@ -237,8 +237,8 @@ class  PC_SAFT_jax():
             if np.abs(dens_L-dens_V) < 1e-9:
                 print('solução trivial')
                 return np.nan, -1
-            phiL = self. pc_phi(dens_L, T, x)
-            phiV = self. pc_phi(dens_V, T, x)
+            phiL = self.phi(dens_L, T, x)
+            phiV = self.phi(dens_V, T, x)
             P = P*(phiL/phiV)
             RES = np.abs(phiL/phiV-1.)
             i = i+10
@@ -277,7 +277,7 @@ class  PC_SAFT_jax():
             dens0 =1
             nl=1
             
-            Al = self. pc_a_res(dens,T,x)*T*kb*Navo
+            Al = self.a_res(dens,T,x)*T*kb*Navo
             somx = 0
             for i in range(self.ncomp):
                 somx += x[i]*np.log(x[i])
